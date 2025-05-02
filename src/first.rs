@@ -39,6 +39,20 @@ impl List {
     }
 }
 
+impl Drop for List {
+    fn drop(&mut self) {
+        // 1. 首先获取头节点的所有权，同时将 head 置为 Empty
+        let mut current_link = std::mem::replace(&mut self.head, Link::Empty);
+
+        // 2. 循环处理每个节点
+        while let Link::More(mut boxed_node) = current_link {
+            // 3. 获取下一个节点的所有权，同时将当前节点的 next 置为 Empty
+            current_link = std::mem::replace(&mut boxed_node.next, Link::Empty);
+            // 4. 当前节点在这里被自动释放
+        }
+    }
+}
+
 #[cfg(test)]
 mod test {
     use super::List;
@@ -70,5 +84,14 @@ mod test {
         // Check exhaustion
         assert_eq!(list.pop(), Some(1));
         assert_eq!(list.pop(), None);
+    }
+
+    #[test]
+    fn long_list() {
+        let mut list = List::new();
+        for i in 0..100000 {
+            list.push(i);
+        }
+        drop(list);
     }
 }
