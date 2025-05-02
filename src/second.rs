@@ -10,6 +10,9 @@ pub struct List<T> {
 }
 // 通过元组结构体定义迭代器
 pub struct IntoIter<T>(List<T>);
+pub struct Iter<'a, T> {
+    next: Option<&'a Node<T>>,
+}
 
 impl<T> List<T> {
     pub fn new() -> Self {
@@ -19,6 +22,14 @@ impl<T> List<T> {
     // 将List转换为IntoIter, 发生所有权转移, list不在可用
     pub fn into_iter(self) -> IntoIter<T> {
         IntoIter(self)
+    }
+    
+    // ‘_ 会让编译器自动推断生命周期, 等价于 pub fn iter<'a>(&'a self) -> Iter<'a, T>
+    pub fn iter(&self) -> Iter<'_, T> {
+        Iter {
+            // 通过as_deref方法将self.head转换为Option<&Node<T>>
+            next: self.head.as_deref(),
+        }
     }
 
     pub fn push(&mut self, elem: T) {
@@ -76,6 +87,17 @@ impl<T> Iterator for IntoIter<T> {
     }
 }
 
+impl<'a, T> Iterator for Iter<'a, T> {
+    // 关联类型,必须明确指定生命周期
+    type Item = &'a T;
+    fn next(&mut self) -> Option<Self::Item> {
+        self.next.map(|node| {
+            // 通过as_deref方法将node.next转换为Option<&Node<T>>
+            self.next = node.next.as_deref();
+            &node.elem
+        })
+    }
+}
 #[cfg(test)]
 mod test {
     use super::List;
@@ -155,6 +177,20 @@ mod test {
         assert_eq!(iter.next(), Some(3));
         assert_eq!(iter.next(), Some(2));
         assert_eq!(iter.next(), Some(1));
+        assert_eq!(iter.next(), None);
+    }
+
+    #[test]
+    fn iter() {
+        let mut list = List::new();
+        list.push(1);
+        list.push(2);
+        list.push(3);
+
+        let mut iter = list.iter();
+        assert_eq!(iter.next(), Some(&3));
+        assert_eq!(iter.next(), Some(&2));
+        assert_eq!(iter.next(), Some(&1));
         assert_eq!(iter.next(), None);
     }
 }
