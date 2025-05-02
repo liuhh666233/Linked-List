@@ -1,20 +1,20 @@
-struct Node {
-    elem: i32,
-    next: Link,
+struct Node<T> {
+    elem: T,
+    next: Link<T>,
 }
 
 // 使用类型别名, 简化Link定义
-type Link = Option<Box<Node>>;
-pub struct List {
-    head: Link,
+type Link<T> = Option<Box<Node<T>>>;
+pub struct List<T> {
+    head: Link<T>,
 }
 
-impl List {
+impl<T> List<T> {
     pub fn new() -> Self {
         List { head: None }
     }
 
-    pub fn push(&mut self, elem: i32) {
+    pub fn push(&mut self, elem: T) {
         let new_node = Node {
             elem: elem,
             // 将self.head持有数据的所有权转移给new_node.next,
@@ -25,7 +25,7 @@ impl List {
         self.head = Some(Box::new(new_node));
     }
 
-    pub fn pop(&mut self) -> Option<i32> {
+    pub fn pop(&mut self) -> Option<T> {
         // map 方法会处理 Some(node) 的情况，返回闭包函数执行结果
         // 如果 self.head 是 None，则 map 返回 None
         self.head.take().map(|node| {
@@ -35,7 +35,7 @@ impl List {
     }
 }
 
-impl Drop for List {
+impl<T> Drop for List<T> {
     fn drop(&mut self) {
         // 1. 首先获取头节点的所有权，同时将 head 置为 None
         let mut current_link = self.head.take();
@@ -79,6 +79,15 @@ mod test {
 
         // Check exhaustion
         assert_eq!(list.pop(), Some(1));
+        assert_eq!(list.pop(), None);
+
+
+        // 测试泛型
+        let mut list = List::new();
+        list.push("hello");
+        list.push("world");
+        assert_eq!(list.pop(), Some("world"));
+        assert_eq!(list.pop(), Some("hello"));
         assert_eq!(list.pop(), None);
     }
 
