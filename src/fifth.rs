@@ -110,6 +110,9 @@ impl<'a, T> Iterator for Iter<'a, T> {
     fn next(&mut self) -> Option<Self::Item> {
         unsafe {
             self.next.map(|node| {
+                // 对裸指针使用as_ref方法，返回一个Option<&Node<T>>,
+                // 如果裸指针为null，则返回None
+                // 如果裸指针不为null，则返回一个&Node<T>
                 self.next = node.next.as_ref();
                 &node.elem
             })
@@ -122,6 +125,9 @@ impl<'a, T> Iterator for IterMut<'a, T> {
     fn next(&mut self) -> Option<Self::Item> {
         unsafe {
             self.next.take().map(|node| {
+                // 对裸指针使用as_mut方法，返回一个Option<&mut Node<T>>,
+                // 如果裸指针为null，则返回None
+                // 如果裸指针不为null，则返回一个&mut Node<T>
                 self.next = node.next.as_mut();
                 &mut node.elem
             })
